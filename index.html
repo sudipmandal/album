@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.3/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.3/dist/semantic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="mainArea">
+        <div class="ui eight cards">
+            <div class="card" v-for="item in d">
+                <div class="image" v-if="item.type == 'SP.File'">
+                    <img :data-sp="item.ServerRelativeUrl">
+                </div>
+                <div class="image" v-if="item.type == 'SP.Folder'">
+                    <img src="https://findicons.com/files/icons/2221/folder/128/normal_folder.png">
+                </div>
+                <div class="extra">
+                    <a :href="GetItemUrl(item)">{{item.Name}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        var app = new Vue({
+            el: "#mainArea",
+            data: {
+                d: [
+                    { "Name": "", "ServerRelativeUrl": "", "type": ""}
+                ]
+            },
+            methods: {
+                
+                GetItemUrl: function (item) {
+                    if (item.type == "SP.Folder")
+                        return "?sp=" + item.ServerRelativeUrl;
+                    else
+                        return "https://prod-06.centralindia.logic.azure.com/workflows/0f6a998173314636a3411504a487563e/triggers/manual/paths/invoke/" + item.ServerRelativeUrl + "?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-nmgLHFwGcpCEN4aKU6Z1pI8GURPwaZMnhhFW1D1Axk";
+                }
+            }
+        });
+
+        function getUrlVars() {
+            var vars = {};
+            var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+                vars[key] = value;
+            });
+            return vars;
+        }
+
+        function getUrlParam(parameter, defaultvalue) {
+            var urlparameter = defaultvalue;
+            if (window.location.href.indexOf(parameter) > -1) {
+                urlparameter = getUrlVars()[parameter];
+            }
+            return urlparameter;
+        }
+
+     
+
+        var c = 0;
+        function GetThumbUrl() {
+
+            if (c >= app.$data.d.length)
+                return;
+
+
+            $.get("https://prod-08.centralindia.logic.azure.com/workflows/332edfc3c7c742eaac54b034e41d25c2/triggers/manual/paths/invoke/" + app.$data.d[c].ServerRelativeUrl + "?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=dlGlyfVU9D1oq_wXJLnArIhZ8NE09i4gYm0m9GE1g5U",
+                            function (tResp) {
+                                var sp = tResp.split(',')[0];
+                                var url = tResp.split(',')[1];
+
+                                $("img[data-sp='" + sp + "']").attr("src", url);
+                });
+
+            c++;
+
+            setTimeout(GetThumbUrl, 1000);
+        }
+
+     
+
+        $(document).ready(function () {
+
+            var serverPath = getUrlParam('sp', 'Documents|Backup');
+            var ListFolderApi = "https://prod-16.centralindia.logic.azure.com/workflows/8d4f9975d8034f39810ca679b1b1d333/triggers/manual/paths/invoke/Item/" + serverPath + "?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tAZJDRr6bZqz_KG1X4lfZbYKaJk43N5gZhdV1dPQuU4";
+            $.get(ListFolderApi, function (data) {
+                app.$data.d = data;
+                GetThumbUrl();
+
+            });
+        });
+    </script>
+
+</body>
+
+
+
+</html>
